@@ -68,19 +68,22 @@
         function App() {
           const [gameState, setGameState] = useState('start'); 
           const [currentIndex, setCurrentIndex] = useState(0);
-          const [score, setScore] = useState(0);
-          const [showFeedback, setShowFeedback] = useState(null);
+          const [feedback, setFeedback] = useState(null); // Các trạng thái: 'wrong', 'correct', 'explain', null
 
           const handleAnswer = (type) => {
-            if (showFeedback) return;
+            if (feedback === 'explain' || feedback === 'correct' || feedback === 'wrong') return;
             const isCorrect = racThai[currentIndex].type === type;
-            if (isCorrect) setScore(s => s + 1);
-            setShowFeedback(isCorrect ? 'correct' : 'wrong');
-            setTimeout(() => nextItem(), 1000); 
+            if (isCorrect) {
+              setFeedback('correct');
+              setTimeout(() => setFeedback('explain'), 800); // Đợi 0.8s hiện tích xanh rồi chuyển sang bảng giải thích
+            } else {
+              setFeedback('wrong');
+              setTimeout(() => setFeedback(null), 800); // Tắt dấu X để người chơi có thể chọn lại
+            }
           };
 
           const nextItem = () => {
-            setShowFeedback(null);
+            setFeedback(null);
             if (currentIndex < racThai.length - 1) {
               setCurrentIndex(i => i + 1);
             } else {
@@ -91,8 +94,7 @@
           const startGame = () => {
             setGameState('playing');
             setCurrentIndex(0);
-            setScore(0);
-            setShowFeedback(null);
+            setFeedback(null);
           };
 
           const resetGame = () => {
@@ -172,21 +174,33 @@
                       </div>
 
                       <div key={currentIndex} className="flex flex-col items-center justify-center flex-1 animate-bounce-short relative w-full mt-4">
-                        {showFeedback && (
+                        {(feedback === 'correct' || feedback === 'wrong') && (
                           <div className="absolute inset-0 flex items-center justify-center z-50 animate-fade-in">
-                            {showFeedback === 'correct' && <div className="text-8xl md:text-9xl drop-shadow-lg">✅</div>}
-                            {showFeedback === 'wrong' && <div className="text-8xl md:text-9xl drop-shadow-lg">❌</div>}
+                            {feedback === 'correct' && <div className="text-8xl md:text-9xl drop-shadow-lg">✅</div>}
+                            {feedback === 'wrong' && <div className="text-8xl md:text-9xl drop-shadow-lg">❌</div>}
                           </div>
                         )}
-                        <div className={`text-8xl md:text-[140px] drop-shadow-2xl mb-4 transition-transform duration-200 ${showFeedback ? 'opacity-30 blur-sm scale-90' : ''}`}>
+                        <div className={`text-8xl md:text-[140px] drop-shadow-2xl mb-4 transition-transform duration-200 ${(feedback === 'correct' || feedback === 'wrong') ? 'opacity-30 blur-sm scale-90' : ''}`}>
                           {racThai[currentIndex].emoji}
                         </div>
-                        <h2 className={`text-3xl md:text-5xl font-black text-slate-800 uppercase text-center tracking-tight px-4 ${showFeedback ? 'opacity-30' : ''}`}>
+                        <h2 className={`text-3xl md:text-5xl font-black text-slate-800 uppercase text-center tracking-tight px-4 ${(feedback === 'correct' || feedback === 'wrong') ? 'opacity-30' : ''}`}>
                           {racThai[currentIndex].name}
                         </h2>
                       </div>
 
-                      <TrashBins />
+                      {feedback === 'explain' ? (
+                        <div className="flex flex-col items-center justify-center w-full mt-auto pt-4 animate-fade-in">
+                           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6 max-w-3xl text-center shadow-md">
+                              <h3 className="text-xl md:text-2xl font-bold text-blue-800 mb-3">Giải thích:</h3>
+                              <p className="text-lg md:text-xl text-slate-700 leading-relaxed">{racThai[currentIndex].reason}</p>
+                           </div>
+                           <button onClick={nextItem} className="bg-blue-500 hover:bg-blue-600 text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg transition-transform hover:scale-105">
+                             Tiếp theo ➡️
+                           </button>
+                        </div>
+                      ) : (
+                        <TrashBins />
+                      )}
                     </div>
                   )}
 
@@ -194,9 +208,8 @@
                   {gameState === 'end' && (
                     <div className="h-full w-full flex flex-col animate-fade-in overflow-y-auto custom-scrollbar p-6">
                       <div className="text-center mb-8 shrink-0">
-                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2 mt-4">KẾT QUẢ CỦA BẠN</h2>
-                        <p className="text-2xl font-bold text-blue-600 mb-2">Điểm số: {score} / {racThai.length}</p>
-                        <p className="text-slate-600 text-lg">Dưới đây là đáp án chuẩn xác. Hãy cuộn xuống để xem lại các món nhé!</p>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2 mt-4">TỔNG KẾT</h2>
+                        <p className="text-slate-600 text-lg">Dưới đây là đáp án chuẩn xác. Hãy cuộn xuống để xem lại toàn bộ các món nhé!</p>
                       </div>
                       
                       {/* Bảng kết quả (Grid tự động co giãn) */}
